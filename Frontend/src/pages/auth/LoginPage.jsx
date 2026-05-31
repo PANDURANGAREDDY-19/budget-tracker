@@ -17,7 +17,7 @@ const LoginPage = () => {
       return
     }
     try {
-      login(email, password)
+      login(email, password, 'Admin')
       const destination = location.state?.from?.pathname || '/app/admin'
       navigate(destination, { replace: true })
     } catch (err) {
