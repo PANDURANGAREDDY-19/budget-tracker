@@ -41,10 +41,10 @@ const ProjectTable = ({ projects }) => {
                   <div className="w-16 bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${project.progress}%` }}
+                      style={{ width: `${project.progress ?? project.completion ?? 0}%` }}
                     ></div>
                   </div>
-                  <span className="text-sm text-gray-600">{project.progress}%</span>
+                  <span className="text-sm text-gray-600">{project.progress ?? project.completion ?? 0}%</span>
                 </div>
               </td>
             </tr>

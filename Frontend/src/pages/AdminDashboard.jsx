@@ -1,9 +1,134 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import ProjectTable from '../components/ProjectTable'
-import { mockProjects } from '../data/mockData'
+import { mockProjects, departmentBudget, analyticsData } from '../data/mockData'
+import { useBudgetContext } from '../context/BudgetContext'
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('projects')
+  const [statusMessage, setStatusMessage] = useState('')
+  const [projects, setProjects] = useState(mockProjects)
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false)
+  const [newProject, setNewProject] = useState({
+    name: '',
+    department: 'Infrastructure',
+    location: '',
+    budget: 0,
+    spent: 0,
+    progress: 0,
+    status: 'Planning',
+    verified: false,
+    description: '',
+    timeline: '',
+    feedback: 0,
+    verificationHistory: [],
+    category: 'Public Works'
+  })
+  const fileInputRef = useRef(null)
+  const { importBudgetData } = useBudgetContext()
+
+  const handleExport = () => {
+    const exportData = {
+      projects,
+      departments: departmentBudget,
+      monthlySpending: analyticsData.monthlySpending
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'budget-tracker-data.json'
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+    setStatusMessage('Data exported successfully.')
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const importedData = JSON.parse(text)
+      
+      // Import data using context (immediately updates Analytics)
+      const success = importBudgetData(importedData)
+      
+      if (success) {
+        // Also save to localStorage for persistence
+        window.localStorage.setItem('budgetTrackerImportedData', JSON.stringify(importedData))
+        setStatusMessage('✓ Data imported successfully! Check Analytics page to view imported budget data.')
+      } else {
+        setStatusMessage('Import failed: invalid data format.')
+      }
+    } catch (error) {
+      setStatusMessage('Import failed: invalid JSON file.')
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  const handleAddProjectClick = () => {
+    setShowAddProjectForm(true)
+    setStatusMessage('')
+  }
+
+  const handleNewProjectChange = (field, value) => {
+    setNewProject((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleAddProjectSubmit = (event) => {
+    event.preventDefault()
+    const id = Math.max(0, ...projects.map((project) => project.id)) + 1
+    const projectToAdd = {
+      id,
+      ...newProject,
+      budget: Number(newProject.budget),
+      spent: Number(newProject.spent),
+      progress: Number(newProject.progress)
+    }
+    setProjects((prev) => [projectToAdd, ...prev])
+    setShowAddProjectForm(false)
+    setNewProject({
+      name: '',
+      department: 'Infrastructure',
+      location: '',
+      budget: 0,
+      spent: 0,
+      completion: 0,
+      status: 'Planning',
+      verified: false,
+      description: '',
+      timeline: '',
+      feedback: 0,
+      verificationHistory: [],
+      category: 'Public Works'
+    })
+    setStatusMessage('Project added successfully.')
+  }
+
+  const handleCancelAddProject = () => {
+    setShowAddProjectForm(false)
+    setStatusMessage('')
+  }
+
+  const handleClearCache = async () => {
+    window.localStorage.clear()
+    window.sessionStorage.clear()
+
+    if (window.caches) {
+      const cacheNames = await window.caches.keys()
+      await Promise.all(cacheNames.map((name) => window.caches.delete(name)))
+    }
+
+    setStatusMessage('Cache cleared successfully.')
+  }
 
   return (
     <div className="space-y-6">
@@ -32,11 +157,123 @@ const AdminDashboard = () => {
       {/* Projects Tab */}
       {activeTab === 'projects' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">Projects Management</h2>
-            <button className="btn btn-primary">+ Add Project</button>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Projects Management</h2>
+              <p className="text-sm text-slate-600">Manage project records and create new entries.</p>
+            </div>
+            <button onClick={handleAddProjectClick} className="btn btn-primary">+ Add Project</button>
           </div>
-          <ProjectTable projects={mockProjects} />
+          {showAddProjectForm && (
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">New Project</h3>
+              <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddProjectSubmit}>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Project Name</label>
+                  <input
+                    type="text"
+                    value={newProject.name}
+                    onChange={(e) => handleNewProjectChange('name', e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Department</label>
+                  <input
+                    type="text"
+                    value={newProject.department}
+                    onChange={(e) => handleNewProjectChange('department', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={newProject.location}
+                    onChange={(e) => handleNewProjectChange('location', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Timeline</label>
+                  <input
+                    type="text"
+                    value={newProject.timeline}
+                    onChange={(e) => handleNewProjectChange('timeline', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Budget</label>
+                  <input
+                    type="number"
+                    value={newProject.budget}
+                    onChange={(e) => handleNewProjectChange('budget', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Spent</label>
+                  <input
+                    type="number"
+                    value={newProject.spent}
+                    onChange={(e) => handleNewProjectChange('spent', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                  <select
+                    value={newProject.status}
+                    onChange={(e) => handleNewProjectChange('status', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option>Planning</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                    <option>Delayed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Progress (%)</label>
+                  <input
+                    type="number"
+                    value={newProject.progress}
+                    onChange={(e) => handleNewProjectChange('progress', e.target.value)}
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                  <textarea
+                    value={newProject.description}
+                    onChange={(e) => handleNewProjectChange('description', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div className="sm:col-span-2 flex flex-wrap gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCancelAddProject}
+                    className="px-5 py-3 rounded-lg border border-gray-300 text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Save Project
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+          <ProjectTable projects={projects} />
         </div>
       )}
 
@@ -57,7 +294,7 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockProjects.map((project) => (
+                  {projects.map((project) => (
                     <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="px-4 py-3 text-gray-900">{project.department}</td>
                       <td className="px-4 py-3 text-gray-900">${(project.budget / 1000000).toFixed(1)}M</td>
@@ -107,15 +344,34 @@ const AdminDashboard = () => {
             <div className="bg-white p-6 rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Data Management</h3>
               <div className="space-y-3">
-                <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <button
+                  onClick={handleExport}
+                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
                   Export Data
                 </button>
-                <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <button
+                  onClick={handleImportClick}
+                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
                   Import Data
                 </button>
-                <button className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <button
+                  onClick={handleClearCache}
+                  className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
                   Clear Cache
                 </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                {statusMessage && (
+                  <p className="text-sm text-slate-600 mt-3">{statusMessage}</p>
+                )}
               </div>
             </div>
           </div>

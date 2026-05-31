@@ -1,31 +1,45 @@
 import React, { useState, useEffect } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { analyticsData, departmentBudget } from '../data/mockData'
+import { useBudgetContext } from '../context/BudgetContext'
 
 const Analytics = () => {
   const [monthlyData, setMonthlyData] = useState([])
+  const { departmentData, monthlyData: contextMonthlyData, importedDataMessage } = useBudgetContext()
 
   useEffect(() => {
-    setMonthlyData(analyticsData.monthlySpending.map((item) => ({
+    const data = contextMonthlyData.map((item) => ({
       month: item.month,
       budget: item.budgeted,
       spent: item.spent,
-      projects: 8
-    })))
-  }, [])
+      projects: item.projects || 8
+    }))
+    setMonthlyData(data)
+  }, [contextMonthlyData])
+
+  const budgetUtilizationData = departmentData.map((dept) => ({
+    name: dept.name,
+    budget: dept.allocated,
+    spent: dept.spent
+  }))
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-gray-900">Analytics</h1>
         <p className="text-gray-600 mt-2">Detailed budget and project analytics.</p>
+        
+        {importedDataMessage && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">{importedDataMessage}</p>
+          </div>
+        )}
       </div>
 
       {/* Budget Trend */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Budget Trend</h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={analyticsData}>
+          <LineChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
@@ -41,7 +55,7 @@ const Analytics = () => {
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Spending vs Budget Comparison</h3>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={analyticsData}>
+          <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
@@ -58,7 +72,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Top Departments by Budget</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={departmentBudget} layout="vertical">
+            <BarChart data={departmentData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis type="category" dataKey="name" width={100} />
@@ -71,7 +85,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-lg shadow">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Budget Utilization Rate</h3>
           <div className="space-y-4">
-            {mockBudgetData.map((dept, index) => {
+            {budgetUtilizationData.map((dept, index) => {
               const utilization = (dept.spent / dept.budget) * 100
               return (
                 <div key={index}>
