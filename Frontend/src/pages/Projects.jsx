@@ -1,12 +1,28 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ProjectCard from '../components/ProjectCard'
-import { mockProjects } from '../data/mockData'
+import { fetchProjects } from '../services/projectsService.js'
 
 const Projects = () => {
   const [filter, setFilter] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredProjects = mockProjects.filter((project) => {
+  const [projects, setProjects] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchProjects()
+        if (mounted) setProjects(data)
+      } catch (err) {
+        console.warn('Unable to load projects from API', err)
+      }
+    }
+    load()
+    return () => (mounted = false)
+  }, [])
+
+  const filteredProjects = projects.filter((project) => {
     const matchesFilter = filter === 'All' || project.status === filter
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesFilter && matchesSearch

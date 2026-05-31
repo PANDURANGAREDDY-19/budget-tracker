@@ -1,12 +1,12 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import ProjectTable from '../components/ProjectTable'
-import { mockProjects, departmentBudget, analyticsData } from '../data/mockData'
+import { fetchProjects, createProject } from '../services/projectsService.js'
 import { useBudgetContext } from '../context/BudgetContext'
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('projects')
   const [statusMessage, setStatusMessage] = useState('')
-  const [projects, setProjects] = useState(mockProjects)
+  const [projects, setProjects] = useState([])
   const [showAddProjectForm, setShowAddProjectForm] = useState(false)
   const [newProject, setNewProject] = useState({
     name: '',
@@ -25,6 +25,20 @@ const AdminDashboard = () => {
   })
   const fileInputRef = useRef(null)
   const { importBudgetData } = useBudgetContext()
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchProjects()
+        if (mounted) setProjects(data)
+      } catch (err) {
+        console.warn('Unable to load projects for admin dashboard', err)
+      }
+    }
+    load()
+    return () => (mounted = false)
+  }, [])
 
   const handleExport = () => {
     const exportData = {
@@ -85,32 +99,45 @@ const AdminDashboard = () => {
 
   const handleAddProjectSubmit = (event) => {
     event.preventDefault()
-    const id = Math.max(0, ...projects.map((project) => project.id)) + 1
-    const projectToAdd = {
-      id,
-      ...newProject,
+    const payload = {
+      name: newProject.name,
+      department: newProject.department,
+      location: newProject.location,
+      district: newProject.location,
       budget: Number(newProject.budget),
       spent: Number(newProject.spent),
-      progress: Number(newProject.progress)
+      progress: Number(newProject.progress),
+      status: newProject.status,
+      description: newProject.description,
+      category: newProject.category
     }
-    setProjects((prev) => [projectToAdd, ...prev])
-    setShowAddProjectForm(false)
-    setNewProject({
-      name: '',
-      department: 'Infrastructure',
-      location: '',
-      budget: 0,
-      spent: 0,
-      completion: 0,
-      status: 'Planning',
-      verified: false,
-      description: '',
-      timeline: '',
-      feedback: 0,
-      verificationHistory: [],
-      category: 'Public Works'
-    })
-    setStatusMessage('Project added successfully.')
+
+    setStatusMessage('Saving project...')
+    createProject(payload)
+      .then((created) => {
+        setProjects((prev) => [created, ...prev])
+        setShowAddProjectForm(false)
+        setNewProject({
+          name: '',
+          department: 'Infrastructure',
+          location: '',
+          budget: 0,
+          spent: 0,
+          completion: 0,
+          status: 'Planning',
+          verified: false,
+          description: '',
+          timeline: '',
+          feedback: 0,
+          verificationHistory: [],
+          category: 'Public Works'
+        })
+        setStatusMessage('Project added successfully.')
+      })
+      .catch((err) => {
+        console.error('Failed to create project', err)
+        setStatusMessage('Failed to save project. Check admin token and backend.')
+      })
   }
 
   const handleCancelAddProject = () => {

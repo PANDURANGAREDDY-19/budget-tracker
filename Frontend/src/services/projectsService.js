@@ -1,10 +1,16 @@
-import { mockProjects } from '../data/mockData.js'
+import api from './api.js'
 
 export const fetchProjects = async () => {
-  return Promise.resolve(mockProjects)
+  const { data } = await api.get('/projects')
+  return data
 }
 
 export const fetchProjectById = async (projectId) => {
-  const project = mockProjects.find((project) => project.id === Number(projectId))
-  return Promise.resolve(project || null)
+  const { data } = await api.get(`/projects/${projectId}`)
+  return data
+}
+
+export const createProject = async (project) => {
+  const { data } = await api.post('/projects', project)
+  return data
 }

@@ -1,12 +1,39 @@
-import React, { useState } from 'react'
-import { reportCategories } from '../data/mockData.js'
+import React, { useEffect, useState } from 'react'
+import { fetchReportCategories, submitReport } from '../services/reportsService.js'
 
 const ReportPage = () => {
-  const [formState, setFormState] = useState({ category: reportCategories[0], description: '' })
+  const [formState, setFormState] = useState({ category: '', description: '' })
+  const [categories, setCategories] = useState([])
+  const [success, setSuccess] = useState('')
 
-  const handleSubmit = (event) => {
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchReportCategories()
+        if (mounted) {
+          setCategories(data)
+          setFormState((s) => ({ ...s, category: data?.[0] || '' }))
+        }
+      } catch (err) {
+        console.warn('Could not load report categories', err)
+      }
+    }
+    load()
+    return () => (mounted = false)
+  }, [])
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    alert('Report submitted successfully!')
+    try {
+      await submitReport(formState)
+      setSuccess('Report submitted successfully!')
+      setFormState({ category: categories[0] || '', description: '' })
+      setTimeout(() => setSuccess(''), 4000)
+    } catch (err) {
+      console.error('Report submission failed', err)
+      setSuccess('Report submission failed')
+    }
   }
 
   return (
@@ -25,7 +52,7 @@ const ReportPage = () => {
               value={formState.category}
               onChange={(event) => setFormState({ ...formState, category: event.target.value })}
             >
-              {reportCategories.map((category) => (
+              {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -48,6 +75,7 @@ const ReportPage = () => {
             Submit Report
           </button>
         </form>
+        {success && <p className="mt-4 text-sm text-green-600">{success}</p>}
       </div>
     </div>
   )

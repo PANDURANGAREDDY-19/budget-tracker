@@ -1,7 +1,23 @@
-import React from 'react'
-import { mockProjects } from '../data/mockData.js'
+import React, { useEffect, useState } from 'react'
+import { fetchProjects } from '../services/projectsService.js'
 
 const MapViewPage = () => {
+  const [projects, setProjects] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchProjects()
+        if (mounted) setProjects(data)
+      } catch (err) {
+        console.warn('Failed to load projects for map view', err)
+      }
+    }
+    load()
+    return () => (mounted = false)
+  }, [])
+
   return (
     <div className="space-y-6">
       <div>
@@ -22,7 +38,7 @@ const MapViewPage = () => {
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Key Projects</h2>
             <div className="mt-4 space-y-3">
-              {mockProjects.slice(0, 5).map((project) => (
+              {projects.slice(0, 5).map((project) => (
                 <div key={project.id} className="rounded-2xl bg-slate-50 p-4">
                   <div className="flex items-center justify-between gap-4">
                     <div>

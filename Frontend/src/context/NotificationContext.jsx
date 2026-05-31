@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { fetchNotifications } from '../services/reportsService.js'
 
 const NotificationContext = createContext()
 
@@ -21,6 +22,23 @@ export const NotificationProvider = ({ children }) => {
       } catch (error) {
         console.error('Error loading notification settings:', error)
       }
+    }
+  }, [])
+
+  // Load initial notifications from backend on mount
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchNotifications()
+        if (mounted) setNotifications(data)
+      } catch (err) {
+        console.warn('Unable to load notifications from API, using local state')
+      }
+    }
+    load()
+    return () => {
+      mounted = false
     }
   }, [])
 

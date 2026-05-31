@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { fetchBudgetAllocation } from '../services/analyticsService.js'
+import { fetchMonthlySpending } from '../services/analyticsService.js'
 import { analyticsData, departmentBudget } from '../data/mockData'
 
 const BudgetContext = createContext()
@@ -27,6 +29,26 @@ export const BudgetProvider = ({ children }) => {
       } catch (error) {
         console.error('Error loading imported data:', error)
       }
+    }
+  }, [])
+
+  // Try to load data from backend API (non-blocking, fallback to bundled mock data)
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const depts = await fetchBudgetAllocation()
+        const months = await fetchMonthlySpending()
+        if (!mounted) return
+        if (depts && depts.length) setDepartmentData(depts)
+        if (months && months.length) setMonthlyData(months)
+      } catch (err) {
+        // leave mock data in place
+      }
+    }
+    load()
+    return () => {
+      mounted = false
     }
   }, [])
 

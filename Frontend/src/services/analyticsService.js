@@ -1,21 +1,26 @@
-import { budgetAllocationChart, departmentExpenseChart, monthlySpendingChart, progressAreaChart, statusDistribution } from '../data/mockData.js'
+import api from './api.js'
 
 export const fetchBudgetAllocation = async () => {
-  return Promise.resolve(budgetAllocationChart)
+  const { data } = await api.get('/analytics/budget-allocation')
+  return data
 }
 
 export const fetchDepartmentExpense = async () => {
-  return Promise.resolve(departmentExpenseChart)
+  const { data } = await api.get('/departments')
+  return data
 }
 
 export const fetchMonthlySpending = async () => {
-  return Promise.resolve(monthlySpendingChart)
+  const { data } = await api.get('/analytics/monthly-spending')
+  return data
 }
 
 export const fetchProgressByMonth = async () => {
-  return Promise.resolve(progressAreaChart)
+  // The backend currently stores monthly spending but not progress metrics.
+  return []
 }
 
 export const fetchStatusDistribution = async () => {
-  return Promise.resolve(statusDistribution)
+  const { data } = await api.get('/analytics/status-distribution')
+  return data
 }

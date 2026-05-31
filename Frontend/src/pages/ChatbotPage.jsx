@@ -1,17 +1,58 @@
-import React, { useState } from 'react'
-import { chatHistory as initialHistory } from '../data/mockData.js'
+import React, { useEffect, useState } from 'react'
+import { fetchChatHistory, postChatMessage } from '../services/chatService.js'
 
 const ChatbotPage = () => {
-  const [messages, setMessages] = useState(initialHistory)
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSend = (event) => {
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const history = await fetchChatHistory()
+        setMessages(history)
+      } catch (err) {
+        setError('Unable to load chat history. Please ensure the backend is running.')
+      }
+    }
+
+    loadHistory()
+  }, [])
+
+  const handleSend = async (event) => {
     event.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isSending) return
 
-    const userMessage = { id: messages.length + 1, sender: 'user', message: input.trim(), timestamp: 'Now' }
-    setMessages((prev) => [...prev, userMessage, { id: prev.length + 2, sender: 'ai', message: 'Thanks for your question. We are reviewing the latest project data.', timestamp: 'Now' }])
+    setError('')
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      message: input.trim(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    setMessages((prev) => [...prev, userMessage])
     setInput('')
+    setIsSending(true)
+
+    try {
+      const assistantResponse = await postChatMessage(userMessage.message)
+      setMessages((prev) => [...prev, assistantResponse])
+    } catch (err) {
+      setError('Unable to send message. Please try again.')
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'ai',
+          message: 'I could not respond at the moment. Please try again later.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ])
+    } finally {
+      setIsSending(false)
+    }
   }
 
   return (
@@ -35,15 +76,22 @@ const ChatbotPage = () => {
           ))}
         </div>
 
+        {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
+
         <form onSubmit={handleSend} className="mt-6 flex gap-3">
           <input
             className="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-civic-500"
             placeholder="Ask Civic Assistant a question"
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            disabled={isSending}
           />
-          <button type="submit" className="rounded-2xl bg-civic-600 px-6 py-3 text-white transition hover:bg-civic-700">
-            Send
+          <button
+            type="submit"
+            disabled={isSending}
+            className={`rounded-2xl px-6 py-3 text-white transition ${isSending ? 'bg-slate-400' : 'bg-civic-600 hover:bg-civic-700'}`}
+          >
+            {isSending ? 'Sending...' : 'Send'}
           </button>
         </form>
       </div>

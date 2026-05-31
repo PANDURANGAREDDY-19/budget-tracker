@@ -1,12 +1,33 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockProjects } from '../data/mockData'
+import { fetchProjectById } from '../services/projectsService.js'
 import BudgetChart from '../components/BudgetChart'
 
 const ProjectDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const project = mockProjects.find((p) => p.id === parseInt(id))
+  const [project, setProject] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const data = await fetchProjectById(id)
+        if (mounted) setProject(data)
+      } catch (err) {
+        console.warn('Failed to load project', err)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => (mounted = false)
+  }, [id])
+
+  if (loading) {
+    return <div className="card p-6">Loading...</div>
+  }
 
   if (!project) {
     return (
