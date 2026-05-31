@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const LoginPage = () => {
@@ -8,6 +8,7 @@ const LoginPage = () => {
   const [error, setError] = useState('')
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -17,9 +18,10 @@ const LoginPage = () => {
     }
     try {
       login(email, password)
-      navigate('/app/dashboard')
+      const destination = location.state?.from?.pathname || '/app/admin'
+      navigate(destination, { replace: true })
     } catch (err) {
-      setError('Login failed. Please try again.')
+      setError('Invalid admin credentials. Please use the admin account to sign in.')
     }
   }
 
@@ -67,7 +69,7 @@ const LoginPage = () => {
 
         <div className="flex items-center justify-between text-sm text-slate-500">
           <Link to="/auth/forgot-password" className="hover:text-civic-700">Forgot password?</Link>
-          <Link to="/auth/register" className="text-civic-600 hover:text-civic-700">Create account</Link>
+          <span className="text-slate-400">Admin access only</span>
         </div>
       </form>
     </div>

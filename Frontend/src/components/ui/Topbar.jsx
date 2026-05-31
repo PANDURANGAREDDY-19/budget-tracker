@@ -1,9 +1,11 @@
 import { Bell, MessageCircle, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useNotifications } from '../../context/NotificationContext'
+import { useAuth } from '../../context/AuthContext.jsx'
 import ProfileDropdown from '../ProfileDropdown'
 
 const Topbar = () => {
+  const { user } = useAuth()
   const { unreadCount } = useNotifications()
   return (
     <header className="border-b border-slate-200 bg-white/80 backdrop-blur sticky top-0 z-20">
@@ -19,16 +21,27 @@ const Topbar = () => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/app/notifications" className="relative p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition">
-            <Bell className="h-5 w-5 text-slate-700" />
-            {unreadCount > 0 && (
-              <span className="absolute right-2 top-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-            )}
-          </Link>
           <Link to="/app/chat" className="p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition">
             <MessageCircle className="h-5 w-5 text-slate-700" />
           </Link>
-          <ProfileDropdown />
+          {user ? (
+            <>
+              <Link to="/app/notifications" className="relative p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition">
+                <Bell className="h-5 w-5 text-slate-700" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 inline-flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                )}
+              </Link>
+              <ProfileDropdown />
+            </>
+          ) : (
+            <Link
+              to="/auth/login"
+              className="rounded-full bg-civic-600 px-5 py-3 text-sm font-semibold text-white hover:bg-civic-700 transition"
+            >
+              Admin Login
+            </Link>
+          )}
         </div>
       </div>
     </header>

@@ -19,8 +19,8 @@ const NotificationsPage = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
-          <p className="text-slate-600 mt-2">Stay current with recent project updates and citizen reports.</p>
+          <h1 className="text-3xl font-bold text-slate-900">Admin Review</h1>
+          <p className="text-slate-600 mt-2">Review user reports, complaints, and verification alerts submitted through the public dashboard.</p>
         </div>
         {notifications.length > 0 && (
           <button

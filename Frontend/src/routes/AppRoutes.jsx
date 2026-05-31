@@ -15,6 +15,7 @@ import ChatbotPage from '../pages/ChatbotPage.jsx'
 import AdminDashboard from '../pages/AdminDashboard.jsx'
 import NotificationsPage from '../pages/NotificationsPage.jsx'
 import SettingsPage from '../pages/SettingsPage.jsx'
+import PrivateRoute from '../components/PrivateRoute.jsx'
 import LoginPage from '../pages/auth/LoginPage.jsx'
 import RegisterPage from '../pages/auth/RegisterPage.jsx'
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage.jsx'
@@ -43,9 +44,30 @@ const AppRoutes = () => {
           <Route path="map" element={<MapViewPage />} />
           <Route path="report" element={<ReportPage />} />
           <Route path="chat" element={<ChatbotPage />} />
-          <Route path="admin" element={<AdminDashboard />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route
+            path="admin"
+            element={
+              <PrivateRoute allowedRoles={[ 'Admin' ]}>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="notifications"
+            element={
+              <PrivateRoute allowedRoles={[ 'Admin' ]}>
+                <NotificationsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <PrivateRoute allowedRoles={[ 'Admin' ]}>
+                <SettingsPage />
+              </PrivateRoute>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

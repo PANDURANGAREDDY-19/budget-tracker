@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-const ProjectTable = ({ projects }) => {
+const ProjectTable = ({ projects, onEdit }) => {
   const statusColor = {
     'In Progress': 'text-yellow-600',
     'Completed': 'text-green-600',
@@ -20,6 +20,7 @@ const ProjectTable = ({ projects }) => {
             <th className="text-left px-4 py-3 font-semibold text-gray-700">Spent</th>
             <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
             <th className="text-left px-4 py-3 font-semibold text-gray-700">Progress</th>
+            {onEdit && <th className="text-left px-4 py-3 font-semibold text-gray-700">Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -47,6 +48,17 @@ const ProjectTable = ({ projects }) => {
                   <span className="text-sm text-gray-600">{project.progress ?? project.completion ?? 0}%</span>
                 </div>
               </td>
+              {onEdit && (
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(project)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

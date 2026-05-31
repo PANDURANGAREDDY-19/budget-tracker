@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 import {
-  Home,
   LayoutDashboard,
   PieChart,
   MapPin,
   MessageSquare,
   FileText,
-  Users,
   BellRing,
   ShieldCheck
 } from 'lucide-react'
@@ -18,11 +17,14 @@ const menu = [
   { label: 'Map View', icon: MapPin, path: '/app/map' },
   { label: 'Report Center', icon: MessageSquare, path: '/app/report' },
   { label: 'Chatbot', icon: MessageSquare, path: '/app/chat' },
-  { label: 'Notifications', icon: BellRing, path: '/app/notifications' },
-  { label: 'Admin', icon: ShieldCheck, path: '/app/admin' }
+  { label: 'Notifications', icon: BellRing, path: '/app/notifications', adminOnly: true },
+  { label: 'Admin', icon: ShieldCheck, path: '/app/admin', adminOnly: true }
 ]
 
 const SidebarNav = () => {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'Admin'
+
   return (
     <aside className="hidden w-80 flex-col border-r border-slate-200 bg-white p-6 lg:flex">
       <div className="mb-10">
@@ -30,7 +32,7 @@ const SidebarNav = () => {
         <p className="mt-2 text-sm text-slate-500">Public Project Transparency & Tracking</p>
       </div>
       <nav className="space-y-2">
-        {menu.map((item) => {
+        {menu.filter((item) => !item.adminOnly || isAdmin).map((item) => {
           const Icon = item.icon
           return (
             <NavLink

@@ -1,28 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react'
 import ProjectTable from '../components/ProjectTable'
-import { fetchProjects, createProject } from '../services/projectsService.js'
+import { fetchProjects, createProject, updateProject } from '../services/projectsService.js'
+import { fetchDepartmentExpense } from '../services/analyticsService.js'
 import { useBudgetContext } from '../context/BudgetContext'
+
+const initialProjectState = {
+  name: '',
+  department: 'Infrastructure',
+  location: '',
+  budget: 0,
+  spent: 0,
+  progress: 0,
+  status: 'Planning',
+  verified: false,
+  description: '',
+  timeline: '',
+  category: 'Public Works'
+}
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('projects')
   const [statusMessage, setStatusMessage] = useState('')
   const [projects, setProjects] = useState([])
+  const [departmentExpenses, setDepartmentExpenses] = useState([])
   const [showAddProjectForm, setShowAddProjectForm] = useState(false)
-  const [newProject, setNewProject] = useState({
-    name: '',
-    department: 'Infrastructure',
-    location: '',
-    budget: 0,
-    spent: 0,
-    progress: 0,
-    status: 'Planning',
-    verified: false,
-    description: '',
-    timeline: '',
-    feedback: 0,
-    verificationHistory: [],
-    category: 'Public Works'
-  })
+  const [editingProject, setEditingProject] = useState(null)
+  const [newProject, setNewProject] = useState(initialProjectState)
   const fileInputRef = useRef(null)
   const { importBudgetData } = useBudgetContext()
 
@@ -30,21 +33,26 @@ const AdminDashboard = () => {
     let mounted = true
     const load = async () => {
       try {
-        const data = await fetchProjects()
-        if (mounted) setProjects(data)
+        const [projectData, deptData] = await Promise.all([fetchProjects(), fetchDepartmentExpense()])
+        if (mounted) {
+          setProjects(projectData)
+          setDepartmentExpenses(deptData)
+        }
       } catch (err) {
-        console.warn('Unable to load projects for admin dashboard', err)
+        console.warn('Unable to load admin dashboard data', err)
       }
     }
     load()
-    return () => (mounted = false)
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const handleExport = () => {
     const exportData = {
       projects,
-      departments: departmentBudget,
-      monthlySpending: analyticsData.monthlySpending
+      departmentExpenses,
+      timestamp: new Date().toISOString()
     }
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
@@ -93,8 +101,31 @@ const AdminDashboard = () => {
     setStatusMessage('')
   }
 
+  const resetProjectForm = () => {
+    setEditingProject(null)
+    setNewProject(initialProjectState)
+  }
+
   const handleNewProjectChange = (field, value) => {
     setNewProject((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleEditProject = (project) => {
+    setEditingProject(project)
+    setShowAddProjectForm(true)
+    setNewProject({
+      name: project.name || '',
+      department: project.department || 'Infrastructure',
+      location: project.location || '',
+      budget: project.budget || 0,
+      spent: project.spent || 0,
+      progress: project.progress ?? project.completion ?? 0,
+      status: project.status || 'Planning',
+      verified: project.verified || false,
+      description: project.description || '',
+      timeline: project.timeline || '',
+      category: project.category || 'Public Works'
+    })
   }
 
   const handleAddProjectSubmit = (event) => {
@@ -113,35 +144,32 @@ const AdminDashboard = () => {
     }
 
     setStatusMessage('Saving project...')
-    createProject(payload)
-      .then((created) => {
-        setProjects((prev) => [created, ...prev])
-        setShowAddProjectForm(false)
-        setNewProject({
-          name: '',
-          department: 'Infrastructure',
-          location: '',
-          budget: 0,
-          spent: 0,
-          completion: 0,
-          status: 'Planning',
-          verified: false,
-          description: '',
-          timeline: '',
-          feedback: 0,
-          verificationHistory: [],
-          category: 'Public Works'
+
+    const saveAction = editingProject
+      ? updateProject(editingProject.id, payload)
+      : createProject(payload)
+
+    saveAction
+      .then((saved) => {
+        setProjects((prev) => {
+          if (editingProject) {
+            return prev.map((project) => (project.id === saved.id ? saved : project))
+          }
+          return [saved, ...prev]
         })
-        setStatusMessage('Project added successfully.')
+        setShowAddProjectForm(false)
+        resetProjectForm()
+        setStatusMessage(editingProject ? 'Project updated successfully.' : 'Project added successfully.')
       })
       .catch((err) => {
-        console.error('Failed to create project', err)
+        console.error('Failed to save project', err)
         setStatusMessage('Failed to save project. Check admin token and backend.')
       })
   }
 
   const handleCancelAddProject = () => {
     setShowAddProjectForm(false)
+    resetProjectForm()
     setStatusMessage('')
   }
 
@@ -193,7 +221,9 @@ const AdminDashboard = () => {
           </div>
           {showAddProjectForm && (
             <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">New Project</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                {editingProject ? 'Edit Project' : 'New Project'}
+              </h3>
               <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleAddProjectSubmit}>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Project Name</label>
@@ -294,13 +324,13 @@ const AdminDashboard = () => {
                     type="submit"
                     className="px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                   >
-                    Save Project
+                    {editingProject ? 'Update Project' : 'Save Project'}
                   </button>
                 </div>
               </form>
             </div>
           )}
-          <ProjectTable projects={projects} />
+          <ProjectTable projects={projects} onEdit={handleEditProject} />
         </div>
       )}
 
@@ -321,17 +351,25 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map((project) => (
-                    <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-900">{project.department}</td>
-                      <td className="px-4 py-3 text-gray-900">${(project.budget / 1000000).toFixed(1)}M</td>
-                      <td className="px-4 py-3 text-gray-900">${(project.spent / 1000000).toFixed(1)}M</td>
-                      <td className="px-4 py-3 text-gray-900">${((project.budget - project.spent) / 1000000).toFixed(1)}M</td>
-                      <td className="px-4 py-3">
-                        <button className="text-blue-600 hover:underline">Edit</button>
+                  {departmentExpenses.length > 0 ? (
+                    departmentExpenses.map((dept) => (
+                      <tr key={dept.name} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-900">{dept.name}</td>
+                        <td className="px-4 py-3 text-gray-900">${(dept.allocated / 1000000).toFixed(1)}M</td>
+                        <td className="px-4 py-3 text-gray-900">${(dept.spent / 1000000).toFixed(1)}M</td>
+                        <td className="px-4 py-3 text-gray-900">${((dept.allocated - dept.spent) / 1000000).toFixed(1)}M</td>
+                        <td className="px-4 py-3">
+                          <button className="text-blue-600 hover:underline">View</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                        Loading budget details...
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

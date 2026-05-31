@@ -14,3 +14,8 @@ export const createProject = async (project) => {
   const { data } = await api.post('/projects', project)
   return data
 }
+
+export const updateProject = async (projectId, updates) => {
+  const { data } = await api.put(`/projects/${projectId}`, updates)
+  return data
+}

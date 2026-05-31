@@ -19,12 +19,6 @@ const LandingPage = () => {
             >
               Explore Dashboard
             </Link>
-            <Link
-              to="/auth/login"
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-8 py-4 text-base font-semibold text-slate-900 transition hover:border-slate-400"
-            >
-              Sign in
-            </Link>
           </div>
         </div>
 

@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [overview, setOverview] = useState(null)
   const [projects, setProjects] = useState([])
   const [budgetAlloc, setBudgetAlloc] = useState([])
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -23,6 +24,7 @@ const Dashboard = () => {
         setBudgetAlloc(b.data || [])
       } catch (err) {
         console.warn('Dashboard API load failed, falling back to defaults', err)
+        setErrorMessage('Unable to load dashboard analytics from the database. Please ensure the backend API is running.')
       }
     }
     load()
@@ -36,8 +38,8 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       <div className="mb-8">
-        <h1 className="section-title">Dashboard</h1>
-        <p className="section-subtitle">Welcome back! Here's your civic budget overview</p>
+        <h1 className="section-title">Public Civic Dashboard</h1>
+        <p className="section-subtitle">Open access to budget data, project analytics, and civic chat support.</p>
       </div>
 
       {/* Stats Cards */}
