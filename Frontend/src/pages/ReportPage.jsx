@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { fetchReportCategories, submitReport } from '../services/reportsService.js'
+import { reportCategories as fallbackCategories } from '../data/mockData.js'
 
 const ReportPage = () => {
-  const [formState, setFormState] = useState({ category: '', description: '' })
-  const [categories, setCategories] = useState([])
-  const [success, setSuccess] = useState('')
+  const [formState, setFormState] = useState({ category: fallbackCategories[0], description: '' })
+  const [categories, setCategories] = useState(fallbackCategories)
+  const [message, setMessage] = useState({ text: '', type: '' })
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
         const data = await fetchReportCategories()
-        if (mounted) {
+        if (mounted && Array.isArray(data) && data.length > 0) {
           setCategories(data)
-          setFormState((s) => ({ ...s, category: data?.[0] || '' }))
+          setFormState((s) => ({ ...s, category: data[0] }))
         }
       } catch (err) {
         console.warn('Could not load report categories', err)
@@ -27,12 +28,12 @@ const ReportPage = () => {
     event.preventDefault()
     try {
       await submitReport(formState)
-      setSuccess('Report submitted successfully!')
-      setFormState({ category: categories[0] || '', description: '' })
-      setTimeout(() => setSuccess(''), 4000)
+      setMessage({ text: 'Report submitted successfully!', type: 'success' })
+      setFormState({ category: categories[0] || fallbackCategories[0], description: '' })
+      setTimeout(() => setMessage({ text: '', type: '' }), 4000)
     } catch (err) {
       console.error('Report submission failed', err)
-      setSuccess('Report submission failed')
+      setMessage({ text: 'Report submission failed', type: 'error' })
     }
   }
 
@@ -75,7 +76,11 @@ const ReportPage = () => {
             Submit Report
           </button>
         </form>
-        {success && <p className="mt-4 text-sm text-green-600">{success}</p>}
+        {message.text && (
+          <p className={`mt-4 text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+            {message.text}
+          </p>
+        )}
       </div>
     </div>
   )

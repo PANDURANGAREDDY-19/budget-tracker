@@ -24,43 +24,51 @@ const ProjectTable = ({ projects, onEdit }) => {
           </tr>
         </thead>
         <tbody>
-          {projects.map((project) => (
-            <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="px-4 py-3">
-                <Link to={`/app/projects/${project.id}`} className="text-primary hover:underline">
-                  {project.name}
-                </Link>
+          {projects.length === 0 ? (
+            <tr>
+              <td colSpan={onEdit ? 7 : 6} className="px-4 py-8 text-center text-gray-500">
+                No projects available. Please check your backend connection or refresh the page.
               </td>
-              <td className="px-4 py-3 text-gray-600">{project.department}</td>
-              <td className="px-4 py-3 text-gray-900">${(project.budget / 1000000).toFixed(1)}M</td>
-              <td className="px-4 py-3 text-gray-900">${(project.spent / 1000000).toFixed(1)}M</td>
-              <td className={`px-4 py-3 font-semibold ${statusColor[project.status] || 'text-gray-600'}`}>
-                {project.status}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-16 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full"
-                      style={{ width: `${project.progress ?? project.completion ?? 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm text-gray-600">{project.progress ?? project.completion ?? 0}%</span>
-                </div>
-              </td>
-              {onEdit && (
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(project)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </button>
-                </td>
-              )}
             </tr>
-          ))}
+          ) : (
+            projects.map((project) => (
+              <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <Link to={`/app/projects/${project.id}`} className="text-primary hover:underline">
+                    {project.name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 text-gray-600">{project.department}</td>
+                <td className="px-4 py-3 text-gray-900">${(project.budget / 1000000).toFixed(1)}M</td>
+                <td className="px-4 py-3 text-gray-900">${(project.spent / 1000000).toFixed(1)}M</td>
+                <td className={`px-4 py-3 font-semibold ${statusColor[project.status] || 'text-gray-600'}`}>
+                  {project.status}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{ width: `${project.progress ?? project.completion ?? 0}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-600">{project.progress ?? project.completion ?? 0}%</span>
+                  </div>
+                </td>
+                {onEdit && (
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => onEdit(project)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

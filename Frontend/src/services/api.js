@@ -13,9 +13,21 @@ if (ADMIN_TOKEN) {
   api.defaults.headers.common['X-Admin-Token'] = ADMIN_TOKEN
 }
 
+export const isApiOffline = () => typeof window !== 'undefined' && window.__API_OFFLINE__ === true
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (typeof window !== 'undefined') {
+      window.__API_OFFLINE__ = false
+    }
+    return response
+  },
   (error) => {
+    if (error?.request && !error?.response) {
+      if (typeof window !== 'undefined') {
+        window.__API_OFFLINE__ = true
+      }
+    }
     return Promise.reject(error?.response?.data || error)
   }
 )

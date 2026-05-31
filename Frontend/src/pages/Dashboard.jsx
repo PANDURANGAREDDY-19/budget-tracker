@@ -3,7 +3,9 @@ import StatsCard from '../components/StatsCard'
 import ProjectCard from '../components/ProjectCard'
 import BudgetChart from '../components/BudgetChart'
 import ProjectTable from '../components/ProjectTable'
-import api from '../services/api.js'
+import { fetchDashboardOverview } from '../services/dashboardService.js'
+import { fetchProjects } from '../services/projectsService.js'
+import { fetchBudgetAllocation } from '../services/analyticsService.js'
 
 const Dashboard = () => {
   const [overview, setOverview] = useState(null)
@@ -15,16 +17,22 @@ const Dashboard = () => {
     let mounted = true
     const load = async () => {
       try {
-        const o = await api.get('/dashboard/overview')
-        const p = await api.get('/projects')
-        const b = await api.get('/analytics/budget-allocation')
+        const [o, p, b] = await Promise.all([
+          fetchDashboardOverview(),
+          fetchProjects(),
+          fetchBudgetAllocation()
+        ])
         if (!mounted) return
-        setOverview(o.data)
-        setProjects(p.data || [])
-        setBudgetAlloc(b.data || [])
+        setOverview(o || {})
+        setProjects(Array.isArray(p) ? p : [])
+        setBudgetAlloc(Array.isArray(b) ? b : [])
       } catch (err) {
+        if (!mounted) return
         console.warn('Dashboard API load failed, falling back to defaults', err)
-        setErrorMessage('Unable to load dashboard analytics from the database. Please ensure the backend API is running.')
+        setOverview({})
+        setProjects([])
+        setBudgetAlloc([])
+        setErrorMessage('Unable to load some dashboard analytics from the backend. Using offline data instead.')
       }
     }
     load()
@@ -33,7 +41,19 @@ const Dashboard = () => {
     }
   }, [])
 
-  const chartData = (budgetAlloc || []).map((item) => ({ name: item.name, budget: item.budget }))
+  const chartData = (budgetAlloc || []).map((item) => ({
+    name: item.name,
+    budget: item.budget ?? item.value ?? item.allocated ?? 0
+  }))
+
+  const stats = overview
+    ? [
+        { title: 'Total Projects', value: overview.total_projects ?? overview.totalProjects ?? 0 },
+        { title: 'Active Projects', value: overview.active_projects ?? overview.activeProjects ?? 0 },
+        { title: 'Completed Projects', value: overview.completed_projects ?? overview.completedProjects ?? 0 },
+        { title: 'Delayed Projects', value: overview.delayed_projects ?? overview.delayedProjects ?? 0 }
+      ]
+    : []
 
   return (
     <div className="space-y-8">
@@ -42,14 +62,11 @@ const Dashboard = () => {
         <p className="section-subtitle">Open access to budget data, project analytics, and civic chat support.</p>
       </div>
 
+      {errorMessage && <p className="text-sm text-amber-600">{errorMessage}</p>}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {(overview && overview.length === undefined ? [
-          { title: 'Total Projects', value: overview.total_projects },
-          { title: 'Active Projects', value: overview.active_projects },
-          { title: 'Completed Projects', value: overview.completed_projects },
-          { title: 'Delayed Projects', value: overview.delayed_projects }
-        ] : []).map((stat, index) => (
+        {stats.map((stat, index) => (
           <StatsCard
             key={index}
             title={stat.title}
