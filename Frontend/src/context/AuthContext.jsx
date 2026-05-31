@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import api from '../services/api.js'
 
 const AuthContext = createContext()
 
@@ -24,33 +23,24 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
-  const ADMIN_EMAIL = 'admin@civictrack.gov'
-  const ADMIN_PASSWORD = 'CivicTrack123!'
-  const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || 'CivicTrack123!'
-
-  const login = (email, password) => {
-    if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
-      throw new Error('Invalid admin credentials')
-    }
-
+  const login = (email, password, role = 'User') => {
+    // Mock login - in production, this would call an API
     const userData = {
       id: 1,
       email,
-      name: 'Civic Admin',
-      role: 'Admin',
+      name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+      role,
       emailNotifications: true
     }
     localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
     setIsAuthenticated(true)
-    api.defaults.headers.common['X-Admin-Token'] = ADMIN_TOKEN
     return true
   }
 
   const logout = () => {
     localStorage.removeItem('user')
     localStorage.removeItem('budgetTrackerImportedData')
-    delete api.defaults.headers.common['X-Admin-Token']
     setUser(null)
     setIsAuthenticated(false)
   }
