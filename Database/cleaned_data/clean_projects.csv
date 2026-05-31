@@ -1,0 +1,11 @@
+Project_ID,Project_Name,Department,District,Budget_Allocated_Lakhs,Budget_Spent_Lakhs,Start_Date,Expected_End_Date,Actual_End_Date,Status,Contractor,Progress_Percentage,Delay_Days,Citizen_Complaints
+P001,Road Expansion NH65,Roads,Hyderabad,500,480,2024-01-10,2024-10-10,2024-10-05,Completed,ABC Infra,100,0,12
+P002,Smart School Building,Education,Warangal,300,250,2024-02-15,2024-09-15,Not Available,In Progress,BuildTech Ltd,75,20,8
+P003,Government Hospital Upgrade,Health,Karimnagar,800,920,2024-01-01,2024-12-01,Not Available,Over Budget,HealthConstruct,85,45,25
+P004,Drainage Improvement,Municipal,Nizamabad,200,180,2024-03-01,2024-08-01,2024-07-20,Completed,CivicWorks,100,0,3
+P005,Rural Water Supply,Rural Development,Adilabad,450,300,2024-04-01,2024-11-01,Not Available,Delayed,WaterFlow Infra,60,60,18
+P006,Bridge Construction,Transport,Khammam,1200,700,2024-01-20,2025-01-20,Not Available,In Progress,BridgeCorp,55,30,14
+P007,Street Lighting Project,Energy,Mahabubnagar,150,170,2024-02-01,2024-07-01,2024-08-15,Over Budget,LightTech,100,45,7
+P008,Public Park Development,Urban Development,Siddipet,100,95,2024-03-10,2024-09-10,2024-09-05,Completed,GreenSpace Ltd,100,0,2
+P009,Sewage Treatment Plant,Municipal,Medak,950,500,2024-01-05,2025-01-05,Not Available,In Progress,EcoInfra,50,10,20
+P010,Village Road Repair,Roads,Nalgonda,250,260,2024-02-20,2024-08-20,2024-09-25,Over Budget,RoadFix Pvt Ltd,100,35,11
