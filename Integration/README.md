@@ -54,7 +54,7 @@ Edit `Integration/.env`:
 # Get a free API key from https://aistudio.google.com/app/apikey
 GOOGLE_ADK_API_KEY=your-real-google-api-key
 GOOGLE_ADK_MODEL=gemini-1.5-flash
-GOOGLE_ADK_ENDPOINT=https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent
+GOOGLE_ADK_ENDPOINT=https://generativelanguage.googleapis.com/v1beta2/models/gemini-1.5-flash:generateText
 
 # Set a secure admin token for protecting write operations
 ADMIN_TOKEN=your-secure-admin-token-here
