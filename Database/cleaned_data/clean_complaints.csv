@@ -1,9 +1,3 @@
 Complaint_ID,Project_ID,Citizen_Name,Issue_Type,Complaint_Date,Status
 C001,P002,Ravi Kumar,Slow Progress,2024-08-10,Open
 C002,P003,Sneha Reddy,Budget Misuse,2024-09-15,Investigating
-C003,P005,Ramesh Kumar,Work Stopped,2024-10-01,Open
-C004,P006,Priya Sharma,Construction Delay,2024-11-11,Resolved
-C005,P009,Kiran Rao,Poor Quality,2024-12-02,Open
-C006,P003,Anjali Devi,Excess Spending,2024-09-20,Open
-C007,P007,Mahesh Babu,Delay in Completion,2024-08-22,Resolved
-C008,P010,Suresh Naidu,Road Damage,2024-10-15,Open
