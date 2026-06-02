@@ -1,3 +1,4 @@
+---
 # GitLab CI/CD Pipeline for Budget Tracker Application
 
 stages:
@@ -66,7 +67,7 @@ validate:javascript:lint:
   image: node:18-slim
   script:
     - cd Frontend
-    - npm ci
+    - npm ci --legacy-peer-deps
     - npm run lint
     - echo "JavaScript linting passed"
   allow_failure: false
@@ -114,7 +115,7 @@ test:javascript:
   image: node:18-slim
   script:
     - cd Frontend
-    - npm ci
+    - npm ci --legacy-peer-deps
     - npm run build
     - echo "Frontend build successful"
   artifacts:
@@ -135,7 +136,10 @@ security:gitleaks:
   stage: security
   image: zricethezav/gitleaks:latest
   script:
-    - gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json || true
+    - >-
+      gitleaks detect --source . --verbose
+      --report-format json
+      --report-path gitleaks-report.json || true
   artifacts:
     paths:
       - gitleaks-report.json
@@ -167,7 +171,7 @@ security:javascript:audit:
   image: node:18-slim
   script:
     - cd Frontend
-    - npm ci
+    - npm ci --legacy-peer-deps
     - npm audit --json > npm-audit-report.json || true
   artifacts:
     paths:
@@ -207,8 +211,12 @@ build:docker:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
   script:
-    - docker build -t budget-tracker:$CI_COMMIT_SHA -t budget-tracker:latest .
-    - docker build -t budget-tracker-frontend:$CI_COMMIT_SHA -f Frontend.Dockerfile .
+    - >-
+      docker build -t budget-tracker:$CI_COMMIT_SHA
+      -t budget-tracker:latest .
+    - >-
+      docker build -t budget-tracker-frontend:$CI_COMMIT_SHA
+      -f Frontend.Dockerfile .
     - echo "IMAGE_TAG=$CI_COMMIT_SHA" > build.env
     - echo "Docker images built successfully"
   artifacts:
