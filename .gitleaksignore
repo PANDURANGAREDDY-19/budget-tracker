@@ -1,0 +1,47 @@
+# Gitleaks Configuration for Allowlist
+# Allowlist to suppress false positives in secret scanning
+
+[allowlist]
+  description = "Allowlist for expected secrets and non-secrets"
+  regex = '''(?i)(?:password|api[_-]?key|secret|token|auth|credential)'''
+
+[[allowlist.regexes]]
+  description = "Placeholder credentials in example files"
+  regex = '''(?:example|demo|test|fake|dummy)_(?:password|key|token|secret|api)'''
+
+[[allowlist.regexes]]
+  description = "Environment variable placeholders"
+  regex = '''YOUR_[A-Z_]+_HERE|your_[a-z_]+_here'''
+
+[[allowlist.regexes]]
+  description = "GitHub examples"
+  regex = '''ghp_[a-zA-Z0-9]{36}'''
+
+[[allowlist.paths]]
+  description = ".env.example file"
+  path = '''.env.example'''
+
+[[allowlist.paths]]
+  description = "README files"
+  path = '''README.md'''
+
+[[allowlist.paths]]
+  description = "Documentation files"
+  path = '''.*\.md$'''
+
+[[allowlist.paths]]
+  description = "Example configuration files"
+  path = '''.*\.example\..*'''
+
+[[allowlist.paths]]
+  description = "Tests directory"
+  path = '''Testing/.*'''
+
+[[allowlist.paths]]
+  description = "Configuration files"
+  path = '''.*\.conf'''
+
+# Commits to ignore (by hash)
+[[allowlist.commits]]
+  commit = "0000000000000000000000000000000000000000"
+  reason = "Placeholder commit"

@@ -1,0 +1,72 @@
+# Ruff Configuration File (Alternative to pyproject.toml)
+# Reference: https://docs.astral.sh/ruff/configuration/
+
+line-length = 100
+target-version = "py311"
+
+# ============================================================================
+# LINTING RULES
+# ============================================================================
+
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "C",      # flake8-comprehensions
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "RUF",    # Ruff-specific rules
+    "Q",      # flake8-quotes
+    "T10",    # flake8-debugger
+    "LOG",    # flake8-logging-format
+    "PIE",    # flake8-pie
+    "PT",     # flake8-pytest-style
+]
+
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "C901",   # complexity
+]
+
+[lint.isort]
+known-first-party = ["Integration"]
+known-third-party = ["fastapi", "pydantic", "sqlalchemy"]
+
+[lint.pylint]
+max-arguments = 5
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"Integration/__init__.py" = ["F401"]
+
+# ============================================================================
+# FORMATTING RULES
+# ============================================================================
+
+[format]
+quote-style = "double"
+indent-style = "space"
+indent-size = 4
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+# ============================================================================
+# EXCLUDE PATTERNS
+# ============================================================================
+
+exclude = [
+    ".git",
+    "__pycache__",
+    "dist",
+    "build",
+    ".venv",
+    "venv",
+    "node_modules",
+    ".pytest_cache",
+    "*.egg-info"
+]

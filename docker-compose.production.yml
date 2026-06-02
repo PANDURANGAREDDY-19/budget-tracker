@@ -1,0 +1,121 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database (Production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: budget-tracker-db-prod
+    environment:
+      POSTGRES_DB: ${DB_NAME:-budget_tracker}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+      - ./Database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./Database/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - budget-tracker-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # FastAPI Backend (Production)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: budget-tracker-backend-prod
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-budget_tracker}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      DEBUG: "false"
+      LOG_LEVEL: warning
+      ENVIRONMENT: production
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - budget-tracker-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # React Frontend (Production)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: budget-tracker-frontend-prod
+    environment:
+      VITE_API_BASE_URL: https://${DOMAIN:-budget-tracker.gov}
+      VITE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - budget-tracker-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx Reverse Proxy (Production)
+  nginx:
+    image: nginx:alpine
+    container_name: budget-tracker-nginx-prod
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt/:/etc/letsencrypt/:ro
+      - nginx_cache:/var/cache/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - budget-tracker-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  postgres_data_prod:
+    driver: local
+  nginx_cache:
+    driver: local
+
+networks:
+  budget-tracker-network:
+    driver: bridge

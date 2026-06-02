@@ -1,0 +1,283 @@
+# GitLab CI/CD Pipeline for Budget Tracker Application
+# This pipeline implements comprehensive testing, security scanning, and deployment
+
+stages:
+  - validate
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  NPM_CACHE_DIR: "$CI_PROJECT_DIR/.npm"
+
+# Define Docker image for Python jobs
+image: python:3.11-slim
+
+# Cache configuration for faster builds
+cache:
+  paths:
+    - .cache/pip
+    - Frontend/node_modules/
+
+# ============================================================================
+# VALIDATE: Linting, Code Quality, and Format Checks
+# ============================================================================
+
+validate:python:lint:
+  stage: validate
+  script:
+    - pip install --quiet ruff
+    - ruff check Integration/ Database/scripts/ --format=github
+    - echo "✅ Python linting passed"
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+validate:python:format:
+  stage: validate
+  script:
+    - pip install --quiet ruff
+    - ruff format Integration/ Database/scripts/ --check --diff
+    - echo "✅ Python format check passed"
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+validate:python:type:
+  stage: validate
+  script:
+    - pip install --quiet mypy
+    - pip install -r Integration/requirements.txt
+    - mypy Integration/ --ignore-missing-imports
+    - echo "✅ Python type checking passed"
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+validate:javascript:lint:
+  stage: validate
+  image: node:18-slim
+  script:
+    - cd Frontend
+    - npm ci
+    - npm run lint
+    - echo "✅ JavaScript linting passed"
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+validate:yaml:
+  stage: validate
+  script:
+    - pip install --quiet yamllint
+    - yamllint .gitlab-ci.yml
+    - yamllint -d "{extends: default}" Integration/ Database/ || true
+  allow_failure: true
+
+# ============================================================================
+# TEST: Unit Tests and Coverage
+# ============================================================================
+
+test:python:
+  stage: test
+  script:
+    - pip install --quiet pytest pytest-cov
+    - pip install -r Integration/requirements.txt
+    - pytest Testing/ --cov=Integration --cov-report=term --cov-report=html --cov-report=xml
+    - echo "Coverage report generated at htmlcov/index.html"
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - htmlcov/
+    expire_in: 30 days
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+test:javascript:
+  stage: test
+  image: node:18-slim
+  script:
+    - cd Frontend
+    - npm ci
+    - npm run build
+    - echo "✅ Frontend build successful"
+  artifacts:
+    paths:
+      - Frontend/dist/
+    expire_in: 7 days
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - develop
+
+# ============================================================================
+# SECURITY: Secret Scanning, Dependency Audit, SAST
+# ============================================================================
+
+security:gitleaks:
+  stage: security
+  image: zricethezav/gitleaks:latest
+  script:
+    - gitleaks detect --source . --verbose --report-format json --report-path gitleaks-report.json || true
+  artifacts:
+    reports:
+      secret_detection: gitleaks-report.json
+    paths:
+      - gitleaks-report.json
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - develop
+
+security:python:audit:
+  stage: security
+  script:
+    - pip install --quiet pip-audit
+    - pip install -r Integration/requirements.txt
+    - pip-audit --desc --output json > pip-audit-report.json || true
+    - cat pip-audit-report.json
+  artifacts:
+    paths:
+      - pip-audit-report.json
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - develop
+
+security:javascript:audit:
+  stage: security
+  image: node:18-slim
+  script:
+    - cd Frontend
+    - npm ci
+    - npm audit --json > npm-audit-report.json || true
+    - cat npm-audit-report.json
+  artifacts:
+    paths:
+      - Frontend/npm-audit-report.json
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - develop
+
+security:python:bandit:
+  stage: security
+  script:
+    - pip install --quiet bandit
+    - bandit -r Integration/ -f json -o bandit-report.json || true
+    - cat bandit-report.json
+  artifacts:
+    paths:
+      - bandit-report.json
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - develop
+
+# ============================================================================
+# BUILD: Docker Image Build
+# ============================================================================
+
+build:docker:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t budget-tracker:$CI_COMMIT_SHA -t budget-tracker:latest .
+    - docker build -t budget-tracker-frontend:$CI_COMMIT_SHA -f Frontend.Dockerfile .
+    - echo "✅ Docker images built successfully"
+  artifacts:
+    reports:
+      dotenv: build.env
+  only:
+    - main
+    - develop
+  allow_failure: false
+
+# ============================================================================
+# DEPLOY: Staging Environment
+# ============================================================================
+
+deploy:staging:
+  stage: deploy
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  script:
+    - echo "🚀 Deploying to staging environment..."
+    - docker-compose -f docker-compose.staging.yml up -d
+    - sleep 10
+    - docker-compose -f docker-compose.staging.yml ps
+    - echo "✅ Staging deployment complete"
+  environment:
+    name: staging
+    url: https://staging.budget-tracker.local
+  only:
+    - develop
+  when: manual
+  allow_failure: false
+
+# ============================================================================
+# DEPLOY: Production Environment (Manual Approval)
+# ============================================================================
+
+deploy:production:
+  stage: deploy
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  script:
+    - echo "🚀 Deploying to production environment..."
+    - docker-compose -f docker-compose.production.yml up -d
+    - sleep 10
+    - docker-compose -f docker-compose.production.yml ps
+    - echo "✅ Production deployment complete"
+  environment:
+    name: production
+    url: https://budget-tracker.gov
+  only:
+    - main
+  when: manual
+  allow_failure: false
+
+# ============================================================================
+# SUCCESS: Pipeline Completion
+# ============================================================================
+
+success:notification:
+  stage: deploy
+  script:
+    - echo "✅ Pipeline completed successfully!"
+  only:
+    - main
+    - develop
+  when: on_success

@@ -1,0 +1,102 @@
+# .dockerignore - Exclude files from Docker builds
+
+# Version control
+.git
+.gitignore
+.github/
+.gitlab-ci.yml
+
+# Dependencies
+node_modules/
+.npm/
+venv/
+.venv/
+env/
+.env
+.env.local
+.env.*.local
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.pydevproject
+.settings/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Build and dist
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.rdb
+
+# Documentation
+docs/
+*.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+appveyor.yml
+
+# Package manager locks (optional, can be included)
+# package-lock.json
+# yarn.lock
+# Pipfile.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Secrets
+.secret
+secrets.json
+private_key.pem
