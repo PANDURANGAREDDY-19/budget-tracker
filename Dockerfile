@@ -2,7 +2,7 @@
 # Backend + Database + Reverse Proxy
 
 # ========== STAGE 1: Python Backend Build ==========
-FROM python:3.11-slim as backend-builder
+FROM python:3.11-slim AS backend-builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY Integration/ /app/Integration/
 COPY Database/ /app/Database/
 
 # ========== STAGE 2: Node.js Frontend Build ==========
-FROM node:18-alpine as frontend-builder
+FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -30,7 +30,7 @@ WORKDIR /app/frontend
 COPY Frontend/package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY Frontend/ .
@@ -39,7 +39,7 @@ COPY Frontend/ .
 RUN npm run build
 
 # ========== STAGE 3: Production Runtime ==========
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 WORKDIR /app
 
